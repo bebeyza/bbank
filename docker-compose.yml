@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Banking Backend App
+  banking-app:
+    build: .
+    container_name: banking_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=your-super-secret-jwt-key-docker
+      - SERVER_PORT=8080
+      - GIN_MODE=release
+    volumes:
+      - ./data:/root/data  # SQLite database will be stored here
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add a simple database viewer
+  sqlite-web:
+    image: coleifer/sqlite-web
+    container_name: banking_db_viewer
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./data:/data
+    command: ["sqlite_web", "/data/banking.db", "--host", "0.0.0.0"]
+    depends_on:
+      - banking-app

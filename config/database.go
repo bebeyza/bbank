@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"bbank/models"
 
@@ -14,8 +15,13 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	// Connect to SQLite with connection pool settings
-	database, err := gorm.Open(sqlite.Open("banking.db"), &gorm.Config{
+	// Use different path for Docker
+	dbPath := "banking.db"
+	if os.Getenv("DOCKER_ENV") == "true" {
+		dbPath = "/root/data/banking.db"
+	}
+
+	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 
