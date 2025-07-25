@@ -1,4 +1,24 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: banking_postgres
+    environment:
+      POSTGRES_DB: banking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Banking Backend App
   banking-app:
     build: .
@@ -6,11 +26,17 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=banking_db
+      - DB_PORT=5432
       - JWT_SECRET=your-super-secret-jwt-key-docker
       - SERVER_PORT=8080
       - GIN_MODE=release
-    volumes:
-      - ./data:/root/data  # SQLite database will be stored here
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
@@ -18,14 +44,17 @@ services:
       timeout: 10s
       retries: 3
 
-  # Optional: Add a simple database viewer
-  sqlite-web:
-    image: coleifer/sqlite-web
-    container_name: banking_db_viewer
+  # Optional: PostgreSQL Admin Interface
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: banking_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "8081:8080"
-    volumes:
-      - ./data:/data
-    command: ["sqlite_web", "/data/banking.db", "--host", "0.0.0.0"]
+      - "8081:80"
     depends_on:
-      - banking-app
+      - postgres
+
+volumes:
+  postgres_data:

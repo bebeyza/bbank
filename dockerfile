@@ -1,6 +1,9 @@
 # Build stage
 FROM golang:1.24.5-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev
+
 # Set working directory
 WORKDIR /app
 
@@ -19,19 +22,13 @@ RUN go build -a -installsuffix cgo -o main .
 # Final stage
 FROM alpine:latest
 
-# Install sqlite (for runtime)
-RUN apk --no-cache add ca-certificates sqlite
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
-
-# Copy any config files if needed
-COPY --from=builder /app/.env* ./
-
-# Create directory for database
-RUN mkdir -p /root/data
 
 # Expose port
 EXPOSE 8080

@@ -8,6 +8,11 @@ import (
 )
 
 type Config struct {
+	DBHost     string
+	DBUser     string
+	DBPassword string
+	DBName     string
+	DBPort     string
 	JWTSecret  string
 	ServerPort string
 }
@@ -23,6 +28,11 @@ func LoadConfig() *Config {
 	}
 
 	config := &Config{
+		DBHost:     getEnv("DB_HOST", "localhost"),
+		DBUser:     getEnv("DB_USER", "postgres"),
+		DBPassword: getEnv("DB_PASSWORD", "yourpassword"),
+		DBName:     getEnv("DB_NAME", "banking_db"),
+		DBPort:     getEnv("DB_PORT", "5432"),
 		JWTSecret:  getEnv("JWT_SECRET", "change-this-secret"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 	}
