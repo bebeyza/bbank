@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24.5-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 go build -a -installsuffix cgo -o main .
+RUN go build -a -installsuffix cgo -o main .
 
 # Final stage
 FROM alpine:latest
