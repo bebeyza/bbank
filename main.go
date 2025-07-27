@@ -34,6 +34,7 @@ func main() {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
+		//auth.POST("/refresh", authHandler.RefreshToken)
 	}
 
 	// Protected routes
@@ -56,6 +57,15 @@ func main() {
 			balances.GET("/current", balanceHandler.GetCurrentBalance)
 			balances.GET("/historical", balanceHandler.GetHistoricalBalance)
 			balances.GET("/at-time", balanceHandler.GetBalanceAtTime)
+		}
+
+		// User routes
+		users := api.Group("/users")
+		{
+			users.GET("", authHandler.GetAllUsers)
+			users.GET("/:id", authHandler.GetUser)
+			users.PUT("/:id", authHandler.UpdateUser)
+			users.DELETE("/:id", authHandler.DeleteUser)
 		}
 	}
 

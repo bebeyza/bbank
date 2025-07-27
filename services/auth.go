@@ -140,3 +140,61 @@ func (s *AuthService) ValidateToken(tokenString string) (uint, error) {
 	userID := uint(claims["user_id"].(float64))
 	return userID, nil
 }
+
+// Get all users
+func (s *AuthService) GetAllUsers() ([]models.User, error) {
+	var users []models.User
+	if err := s.db.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// Get user by ID
+func (s *AuthService) GetUserByID(userID uint) (*models.User, error) {
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// Update user details
+func (s *AuthService) UpdateUser(userID uint, updatedUser models.User) (*models.User, error) {
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+
+	// Update fields
+	user.Username = updatedUser.Username
+	user.Email = updatedUser.Email
+
+	if updatedUser.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = string(hashedPassword)
+	}
+
+	if err := s.db.Save(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// Delete user
+func (s *AuthService) DeleteUser(userID uint) error {
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return err
+	}
+
+	if err := s.db.Delete(&user).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"bbank/services"
@@ -38,4 +39,14 @@ func AuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
 		c.Set("user_id", userID)
 		c.Next()
 	}
+}
+
+func GetUserIDFromParam(c *gin.Context) (uint, bool) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return 0, false
+	}
+	return uint(id), true
 }

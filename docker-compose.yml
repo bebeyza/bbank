@@ -43,18 +43,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Optional: PostgreSQL Admin Interface
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: banking_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "8081:80"
-    depends_on:
-      - postgres
-
-volumes:
-  postgres_data:

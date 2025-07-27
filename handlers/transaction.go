@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"bbank/middleware"
 	"bbank/services"
 
 	"github.com/gin-gonic/gin"
@@ -110,7 +111,10 @@ func (h *TransactionHandler) GetHistory(c *gin.Context) {
 
 // Get single transaction
 func (h *TransactionHandler) GetTransaction(c *gin.Context) {
-	userID := getUserIDFromContext(c)
+	userID, ok := middleware.GetUserIDFromParam(c)
+	if !ok {
+		return
+	}
 
 	transactionIDStr := c.Param("id")
 	transactionID, err := strconv.ParseUint(transactionIDStr, 10, 32)

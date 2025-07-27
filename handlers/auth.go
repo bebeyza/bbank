@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"bbank/middleware"
+	"bbank/models"
 	"bbank/services"
 
 	"github.com/gin-gonic/gin"
@@ -50,4 +52,64 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *AuthHandler) GetAllUsers(c *gin.Context) {
+	users, err := h.authService.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func (h *AuthHandler) GetUser(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromParam(c)
+	if !ok {
+		return // Hata zaten middleware fonksiyon içinde döndü
+	}
+
+	user, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *AuthHandler) UpdateUser(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromParam(c)
+	if !ok {
+		return // Hata zaten middleware fonksiyon içinde döndü
+	}
+
+	var updatedUser models.User
+	if err := c.ShouldBindJSON(&updatedUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.authService.UpdateUser(userID, updatedUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *AuthHandler) DeleteUser(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromParam(c)
+	if !ok {
+		return // Hata zaten middleware fonksiyon içinde döndü
+	}
+
+	if err := h.authService.DeleteUser(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
 }
