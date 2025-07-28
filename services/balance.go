@@ -47,13 +47,28 @@ func (s *BalanceService) UpdateBalance(userID uint, amount float64) error {
 	})
 }
 
-// Get balance at specific time (simplified version)
-func (s *BalanceService) GetBalanceAtTime(userID uint, timestamp time.Time) (float64, error) {
-	// For now, return current balance
-	// In production, you'd calculate from transaction history
-	balance, err := s.GetBalance(userID)
+// Get balance at specific time
+func (s *BalanceService) GetBalanceAtTime(userID uint, ts time.Time) (float64, error) {
+	var totalIncoming float64
+	var totalOutgoing float64
+
+	// Incoming: transactions where user is the receiver
+	err := s.db.Model(&models.Transaction{}).
+		Select("COALESCE(SUM(amount), 0)").
+		Where("to_user_id = ? AND created_at <= ?", userID, ts).
+		Scan(&totalIncoming).Error
 	if err != nil {
 		return 0, err
 	}
-	return balance.Amount, nil
+
+	// Outgoing: transactions where user is the sender
+	err = s.db.Model(&models.Transaction{}).
+		Select("COALESCE(SUM(amount), 0)").
+		Where("from_user_id = ? AND created_at <= ?", userID, ts).
+		Scan(&totalOutgoing).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return totalIncoming - totalOutgoing, nil
 }
