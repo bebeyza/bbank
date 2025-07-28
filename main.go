@@ -29,6 +29,11 @@ func main() {
 	// Setup Gin router
 	r := gin.Default()
 
+	// Middleware for logging
+	r.Use(middleware.AuditLogger(config.GetDB()))
+	// Middleware for CORS
+	r.Use(middleware.CORSMiddleware())
+
 	// Public routes
 	auth := r.Group("/api/v1/auth")
 	{
