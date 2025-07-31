@@ -28,8 +28,9 @@ type RegisterRequest struct {
 }
 
 type AuthResponse struct {
-	Token string      `json:"token"`
-	User  models.User `json:"user"`
+	AccessToken  string      `json:"access_token"`
+	RefreshToken string      `json:"refresh_token"`
+	User         models.User `json:"user"`
 }
 
 func NewAuthService(db *gorm.DB, jwtSecret string) *AuthService {
@@ -74,14 +75,15 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 	s.db.Create(&balance)
 
 	// Generate JWT token
-	token, err := s.generateToken(user.ID)
+	access_token, refresh_token, err := s.GenerateToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AuthResponse{
-		Token: token,
-		User:  user,
+		AccessToken:  access_token,
+		RefreshToken: refresh_token,
+		User:         user,
 	}, nil
 }
 
@@ -99,27 +101,42 @@ func (s *AuthService) Login(req LoginRequest) (*AuthResponse, error) {
 	}
 
 	// Generate JWT token
-	token, err := s.generateToken(user.ID)
+	access_token, refresh_token, err := s.GenerateToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AuthResponse{
-		Token: token,
-		User:  user,
+		AccessToken:  access_token,
+		RefreshToken: refresh_token,
+		User:         user,
 	}, nil
 }
 
 // Generate JWT token
-func (s *AuthService) generateToken(userID uint) (string, error) {
-	claims := jwt.MapClaims{
+func (s *AuthService) GenerateToken(userID uint) (access_token string, refresh_token string, err error) {
+	accessClaims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(), // 24 hours
 		"iat":     time.Now().Unix(),
+		"type":    "access",
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.jwtSecret))
+	access := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessToken, err := access.SignedString([]byte(s.jwtSecret))
+
+	// Generate refresh token
+	refreshClaims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(time.Hour * 24 * 30).Unix(), // 30 days
+		"iat":     time.Now().Unix(),
+		"type":    "refresh",
+	}
+
+	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshToken, err := refresh.SignedString([]byte(s.jwtSecret))
+
+	return accessToken, refreshToken, err
 }
 
 // Validate JWT token
@@ -133,8 +150,26 @@ func (s *AuthService) ValidateToken(tokenString string) (uint, error) {
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return 0, errors.New("invalid token claims")
+	if !ok || claims["type"] != "access" {
+		return 0, errors.New("invalid access token")
+	}
+
+	userID := uint(claims["user_id"].(float64))
+	return userID, nil
+}
+
+func (s *AuthService) ValidateRefreshToken(tokenString string) (uint, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(s.jwtSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return 0, errors.New("invalid refresh token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["type"] != "refresh" {
+		return 0, errors.New("invalid refresh token")
 	}
 
 	userID := uint(claims["user_id"].(float64))
