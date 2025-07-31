@@ -6,5 +6,6 @@ func GetAllModels() []interface{} {
 		&User{},
 		&Balance{},
 		&Transaction{},
+		&AuditLog{},
 	}
 }
