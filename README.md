@@ -1,7 +1,7 @@
 
 # 🏦 bbank – Backend Service
 
-A Go‑based backend service for a simple banking system. The project includes user management, transaction processing, balance tracking, and an HTTP API layer. Future enhancements such as Redis caching, rate limiting, monitoring, and advanced features are planned.
+A Go‑based backend service for a simple banking system. The project includes user management, transaction processing, balance tracking, and an HTTP API layer.
 
 ---
 
